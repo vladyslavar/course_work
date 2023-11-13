@@ -10,6 +10,9 @@ class Model():
         self.elements = elements
         self.curr_element = None
 
+        self.max_clients = 0
+        self.mean_clients_sum = 0
+
     def simulate(self, time_modeling):
         while self.tcurr < time_modeling:
             
@@ -35,6 +38,7 @@ class Model():
 
             for element in self.elements:
                 element.do_statistics(self.tcurr - prev_time)
+            self.make_canteen_statistics(self.tcurr - prev_time)
 
             for element in self.elements:
                 element.print_info()
@@ -49,6 +53,74 @@ class Model():
         print("STATISTICS")
         for element in self.elements:
             element.print_statistics()
+
+        print(f'Mean clients in canteen: {self.mean_clients_sum / self.tcurr:.2f}, max clients: {self.max_clients}')
+        
+        print(f'Route first_dishes -> drinks -> checkout:')
+        first_route_mean_time = 0.0
+        first_route_max_time = 0.0
+        for element in self.elements:
+            if isinstance(element, SMO.First_Dishes) or isinstance(element, SMO.Drinks):
+                first_route_mean_time += element.mean_waiting_time
+                first_route_max_time += element.max_waiting_time
+            elif isinstance(element, SMO.Checkout):
+                for paydesk in element.paydesks:
+                    first_route_mean_time += paydesk.mean_waiting_time / element.paydesks.__len__()
+                    first_route_max_time += paydesk.max_waiting_time / element.paydesks.__len__()
+        print(f'Mean waiting time: {first_route_mean_time:.2f}, max waiting time: {first_route_max_time:.2f}')
+
+        print(f'Route second_dishes -> drinks -> checkout:')
+        second_route_mean_time = 0.0
+        second_route_max_time = 0.0
+        for element in self.elements:
+            if isinstance(element, SMO.Second_Dishes) or isinstance(element, SMO.Drinks):
+                second_route_mean_time += element.mean_waiting_time
+                second_route_max_time += element.max_waiting_time
+            if isinstance(element, SMO.Checkout):
+                for paydesk in element.paydesks:
+                    second_route_mean_time += paydesk.mean_waiting_time / element.paydesks.__len__()
+                    second_route_max_time += paydesk.max_waiting_time / element.paydesks.__len__()
+        print(f'Mean waiting time: {second_route_mean_time:.2f}, max waiting time: {second_route_max_time:.2f}')
+
+        print(f'Route drinks -> checkout:')
+        third_route_mean_time = 0.0
+        third_route_max_time = 0.0
+        for element in self.elements:
+            if isinstance(element, SMO.Drinks):
+                third_route_mean_time += element.mean_waiting_time
+                third_route_max_time += element.max_waiting_time
+            if isinstance(element, SMO.Checkout):
+                for paydesk in element.paydesks:
+                    third_route_mean_time += paydesk.mean_waiting_time / element.paydesks.__len__()
+                    third_route_max_time += paydesk.max_waiting_time / element.paydesks.__len__()
+        print(f'Mean waiting time: {third_route_mean_time:.2f}, max waiting time: {third_route_max_time:.2f}')
+            
+        
+
+    # TODO: make statistics for canteen
+    # for first_dishes, second_dishes queue + person proccessitng
+    # for drinks queue
+    # for checkout queue + person processing is each paydesk
+    def make_canteen_statistics(self, deltaT):
+        all_clients = 0
+        for element in self.elements:
+            if isinstance(element, SMO.First_Dishes) or isinstance(element, SMO.Second_Dishes):
+                all_clients += element.queue.__len__()
+                if element.state == 1:
+                    all_clients += 1
+            elif isinstance(element, SMO.Drinks):
+                all_clients += element.queue.__len__()
+            elif isinstance(element, SMO.Checkout):
+                for paydesk in element.paydesks:
+                    all_clients += paydesk.queue.__len__()
+                    if paydesk.state == 1:
+                        all_clients += 1
+
+        self.mean_clients_sum += all_clients * deltaT
+        if all_clients > self.max_clients:
+            self.max_clients = all_clients
+                
+            
 
 if __name__ == "__main__":
     randomizer = Randomizer()

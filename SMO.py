@@ -102,6 +102,8 @@ class First_Dishes(Element):
 
         self.received_students = 0
         self.proccessed_students = 0
+        self.mean_waiting_time = 0.0
+        self.max_waiting_time = 0.0
 
     def in_act(self, student):
         print(f'{student.name} came to {self.name}')
@@ -146,7 +148,10 @@ class First_Dishes(Element):
 
     def print_statistics(self):
         super().print_statistics()
-        print(f'Mean waiting time: {self.mean_queue_sum / self.proccessed_students:.2f}')
+        self.mean_waiting_time = self.mean_queue_sum / self.proccessed_students if self.proccessed_students != 0 else 0
+        self.max_waiting_time = (self.mean_waiting_time / (self.mean_queue_sum / self.tcurr)) * self.max_queue if self.mean_queue_sum != 0 else 0
+        print(f'Mean waiting time: {self.mean_waiting_time:.2f}, Max waiting time: {self.max_waiting_time:.2f}')
+
         print()
         
 
@@ -161,6 +166,8 @@ class Second_Dishes(Element):
 
         self.received_students = 0
         self.proccessed_students = 0
+        self.mean_waiting_time = 0.0
+        self.max_waiting_time = 0.0
 
     def in_act(self, student):
         print(f'{student.name} came to {self.name}')
@@ -204,7 +211,9 @@ class Second_Dishes(Element):
 
     def print_statistics(self):
         super().print_statistics()
-        print(f'Mean waiting time: {self.mean_queue_sum / self.proccessed_students:.2f}')
+        self.mean_waiting_time = self.mean_queue_sum / self.proccessed_students if self.proccessed_students != 0 else 0
+        self.max_waiting_time = (self.mean_waiting_time / (self.mean_queue_sum / self.tcurr)) * self.max_queue if self.mean_queue_sum != 0 else 0
+        print(f'Mean waiting time: {self.mean_waiting_time:.2f}, Max waiting time: {self.max_waiting_time:.2f}')
         print()
 
 
@@ -216,6 +225,8 @@ class Drinks(Element):
 
         self.received_students = 0
         self.proccessed_students = 0
+        self.mean_waiting_time = 0.0
+        self.max_waiting_time = 0.0
 
     def in_act(self, student):
         print(f'{student.name} came to {self.name}')
@@ -266,7 +277,9 @@ class Drinks(Element):
 
     def print_statistics(self):
         super().print_statistics()
-        print(f'Mean waiting time: {self.mean_queue_sum / self.proccessed_students:.2f}')
+        self.mean_waiting_time = self.mean_queue_sum / self.proccessed_students if self.proccessed_students != 0 else 0
+        self.max_waiting_time = (self.mean_waiting_time / (self.mean_queue_sum / self.tcurr)) * self.max_queue if self.mean_queue_sum != 0 else 0
+        print(f'Mean waiting time: {self.mean_waiting_time:.2f}, Max waiting time: {self.max_waiting_time:.2f}')
         print()
 
 
@@ -282,6 +295,8 @@ class Paydesk():
         self.proccessed_students = 0
         self.mean_queue_sum = 0.0
         self.max_queue = 0
+        self.mean_waiting_time = 0.0
+        self.max_waiting_time = 0.0
 
 class Checkout(Element):
     def __init__(self, name, distribution):
@@ -370,7 +385,9 @@ class Checkout(Element):
 
     def print_statistics(self):
         for paydesk in self.paydesks:
-            print(f'Paydesk: {paydesk.name}, Mean queue: {paydesk.mean_queue_sum / self.tcurr:.2f}, Max queue: {paydesk.max_queue}, ')
-            print(f'Mean waiting time: {paydesk.mean_queue_sum / paydesk.proccessed_students:.2f}')
+            print(f'Paydesk: {paydesk.name}, Mean queue: {paydesk.mean_queue_sum / self.tcurr:.2f}, Max queue: {paydesk.max_queue}')
+            paydesk.mean_waiting_time = paydesk.mean_queue_sum / paydesk.proccessed_students if paydesk.proccessed_students != 0 else 0
+            paydesk.max_waiting_time = (paydesk.mean_waiting_time / (paydesk.mean_queue_sum / self.tcurr)) * paydesk.max_queue if paydesk.mean_queue_sum != 0 else 0
+            print(f'Mean waiting time: {paydesk.mean_waiting_time:.2f}, Max waiting time: {paydesk.max_waiting_time:.2f}')
         print()
                 
