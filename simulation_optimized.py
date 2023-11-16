@@ -1,6 +1,6 @@
 import sys
 import time
-import SMO
+import SMO_optimized as SMO
 from randomizers import Randomizer
 
 class Model():
@@ -60,7 +60,11 @@ class Model():
         first_route_mean_time = 0.0
         first_route_max_time = 0.0
         for element in self.elements:
-            if isinstance(element, SMO.First_Dishes) or isinstance(element, SMO.Drinks):
+            if isinstance(element, SMO.First_Dishes):
+                for worker in element.first_dishes_workers:
+                    first_route_mean_time += worker.mean_waiting_time / element.first_dishes_workers.__len__()
+                    first_route_max_time += worker.max_waiting_time / element.first_dishes_workers.__len__()
+            elif isinstance(element, SMO.Drinks):
                 first_route_mean_time += element.mean_waiting_time
                 first_route_max_time += element.max_waiting_time
             elif isinstance(element, SMO.Checkout):
@@ -104,7 +108,12 @@ class Model():
     def make_canteen_statistics(self, deltaT):
         all_clients = 0
         for element in self.elements:
-            if isinstance(element, SMO.First_Dishes) or isinstance(element, SMO.Second_Dishes):
+            if isinstance(element, SMO.First_Dishes):
+                for worker in element.first_dishes_workers:
+                    all_clients += worker.queue.__len__()
+                    if worker.state == 1:
+                        all_clients += 1
+            elif isinstance(element, SMO.Second_Dishes):
                 all_clients += element.queue.__len__()
                 if element.state == 1:
                     all_clients += 1

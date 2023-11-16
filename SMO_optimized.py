@@ -99,10 +99,9 @@ class Student(Element):
                 student_to_send = copy.copy(self)
                 element.in_act(student_to_send)
     
-
-class First_Dishes(Element):
-    def __init__(self, name, distribution):
-        super().__init__(name, distribution)
+class First_Dishes_Worker():
+    def __init__(self, name) -> None:
+        self.name = name
         self.tnext = sys.float_info.max
         self.queue = []
         self.state = 0
@@ -110,56 +109,89 @@ class First_Dishes(Element):
 
         self.received_students = 0
         self.proccessed_students = 0
+        self.mean_queue_sum = 0.0
+        self.max_queue = 0
         self.mean_waiting_time = 0.0
         self.max_waiting_time = 0.0
 
+class First_Dishes(Element):
+    def __init__(self, name, distribution):
+        super().__init__(name, distribution)
+        self.tnext = sys.float_info.max
+        self.first_dishes_workers = [
+            First_Dishes_Worker("First Dishes Worker 1"),
+            First_Dishes_Worker("First Dishes Worker 2"),
+            First_Dishes_Worker("First Dishes Worker 3"),
+            First_Dishes_Worker("First Dishes Worker 4"),
+            First_Dishes_Worker("First Dishes Worker 5"),
+        ] 
+
     def in_act(self, student):
         print(f'{student.name} came to {self.name}')
-        self.received_students += 1
 
-        if self.state == 0:
-            self.state = 1
-            self.tnext = self.tcurr + self.dist["randomizer"].Uniform(self.dist["a"], self.dist["b"])
-            self.student_processing = student
-            self.student_processing.in_first_dishes = True
+        #chekc if it is free worker
+        worker_to_use = None
+        for worker in self.first_dishes_workers:
+            if worker.state == 0:
+                worker_to_use = worker
+                break
+        # go to free worker
+        if worker_to_use is not None:
+            worker_to_use.state = 1
+            worker_to_use.student_processing = student
+            worker_to_use.received_students += 1
 
+            time_of_service = self.dist["randomizer"].Uniform(self.dist["a"], self.dist["b"])
+            worker_to_use.tnext = self.tcurr + time_of_service
+            print(f'{student.name} will get his first dishes for {time_of_service:.2f}')
+            self.tnext = min(self.first_dishes_workers, key=lambda x: x.tnext).tnext    
+        # place in min queue
         else:
-            self.queue.append(student)
+            worker_with_min_queue = min(self.first_dishes_workers, key=lambda x: x.queue.__len__())
+            worker_with_min_queue.queue.append(student)
+            worker_with_min_queue.received_students += 1
+            print(f'{student.name} will wait in queue for {worker_with_min_queue.queue.__len__()} students')
 
     def out_act(self):
         super().out_act()
-        student_to_send = copy.copy(self.student_processing)
-        
-        self.tnext = sys.float_info.max
-        self.student_processing = None
-        self.state = 0
+        current_worker = [x for x in self.first_dishes_workers if x.tnext == self.tnext][0]
+        current_student = copy.copy(current_worker.student_processing)
+        current_worker.state = 0
+        current_worker.student_processing = None
+        current_worker.tnext = sys.float_info.max
+        current_worker.proccessed_students += 1
 
-        self.next_elements["drinks"].in_act(student_to_send)
-        self.proccessed_students += 1
+        if current_worker.queue.__len__() > 0:
+            current_worker.state = 1
+            current_worker.student_processing = current_worker.queue.pop(0)
+            time_of_service = self.dist["randomizer"].Uniform(self.dist["a"], self.dist["b"])
+            current_worker.tnext = self.tcurr + time_of_service
+            print(f'{current_worker.student_processing.name} will get his first dishes for {time_of_service:.2f}')
 
-        if len(self.queue) > 0:
-            self.state = 1
-            self.tnext = self.tcurr + self.dist["randomizer"].Uniform(self.dist["a"], self.dist["b"])
-            self.student_processing = self.queue.pop(0)
-            self.student_processing.in_first_dishes = True
+        self.tnext = min(self.first_dishes_workers, key=lambda x: x.tnext).tnext
+
+        self.next_elements["drinks"].in_act(current_student)
+
 
     def print_info(self):
         super().print_info()
-        print(f'Queue: {self.queue.__len__()}')
-        print(f'Received students: {self.received_students}; Proccessed students: {self.proccessed_students}')
+        for worker in self.first_dishes_workers:
+            print(f'Worker: {worker.name}, Queue: {worker.queue.__len__()}, State: {worker.state}, tnext: {(worker.tnext if worker.tnext != sys.float_info.max else 0):.2f}')
+            print(f'Received students: {worker.received_students}; Proccessed students: {worker.proccessed_students}')
         print()
 
     def do_statistics(self, deltaT):
-        self.mean_queue_sum += self.queue.__len__() * deltaT
-        if self.queue.__len__() > self.max_queue:
-            self.max_queue = self.queue.__len__()
+        for worker in self.first_dishes_workers:
+            worker.mean_queue_sum += worker.queue.__len__() * deltaT
+            if worker.queue.__len__() > worker.max_queue:
+                worker.max_queue = worker.queue.__len__()
 
     def print_statistics(self):
-        super().print_statistics()
-        self.mean_waiting_time = self.mean_queue_sum / self.proccessed_students if self.proccessed_students != 0 else 0
-        self.max_waiting_time = (self.mean_waiting_time / (self.mean_queue_sum / self.tcurr)) * self.max_queue if self.mean_queue_sum != 0 else 0
-        print(f'Mean waiting time: {self.mean_waiting_time:.2f}, Max waiting time: {self.max_waiting_time:.2f}')
-
+        for worker in self.first_dishes_workers:
+            print(f'Worker: {worker.name}, Mean queue: {worker.mean_queue_sum / self.tcurr:.2f}, Max queue: {worker.max_queue}')
+            worker.mean_waiting_time = worker.mean_queue_sum / worker.proccessed_students if worker.proccessed_students != 0 else 0
+            worker.max_waiting_time = (worker.mean_waiting_time / (worker.mean_queue_sum / self.tcurr)) * worker.max_queue if worker.mean_queue_sum != 0 else 0
+            print(f'Mean waiting time: {worker.mean_waiting_time:.2f}, Max waiting time: {worker.max_waiting_time:.2f}')
         print()
         
 
