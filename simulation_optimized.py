@@ -2,6 +2,7 @@ import sys
 import time
 import SMO_optimized as SMO
 from randomizers import Randomizer
+import numpy as np
 
 class Model():
     def __init__(self, elements):
@@ -129,9 +130,8 @@ class Model():
         if all_clients > self.max_clients:
             self.max_clients = all_clients
                 
-            
 
-if __name__ == "__main__":
+def create_elements():
     randomizer = Randomizer()
     group_randomizer = {
         "randomizer": randomizer,
@@ -188,8 +188,38 @@ if __name__ == "__main__":
         drinks, 
         check_out
     ]
+    return elements
 
-    model = Model(elements)
-    model.simulate(5400)
-    model.print_results()
+def get_verified_data(data_array):
+    means = []
+    for data in data_array:
+        value, time = zip(*data)
+        values_to_use = []
+        for i in range(time.__len__()):
+            if time[i] > 1800:
+                values_to_use.append(value[i])
+        means.append(np.mean(values_to_use))
+    return means
+
+if __name__ == "__main__":
+    all_first_dishes_stats = []
+
+    for i in range(20):
+        elements = create_elements()
+        model = Model(elements)
+        model.simulate(5400)
+        model.print_results()
+        for element in elements:
+            if isinstance(element, SMO.First_Dishes):
+                one_first_dishes_stats = []
+                for worker in element.first_dishes_workers:
+                    one_first_dishes_stats.append(worker.mean_queue_stats_data)
+                all_first_dishes_stats.append(np.mean(one_first_dishes_stats, axis=0))
+                
+        print(f'All first dishes stats:')
+        print(all_first_dishes_stats)
+
+    print("MEAN QUEUE LENGTH")
+    print(get_verified_data(all_first_dishes_stats))
+
         

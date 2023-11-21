@@ -3,6 +3,9 @@ import time
 import SMO
 from randomizers import Randomizer
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 class Model():
     def __init__(self, elements):
         self.tnext = 0.0
@@ -120,9 +123,31 @@ class Model():
         if all_clients > self.max_clients:
             self.max_clients = all_clients
                 
-            
+              
+def draw_statistics_data(data_array):
+    print("DRAW STATISTICS")
+    for data in data_array:
+        value, time = zip(*data)
+        plt.plot(time, value)
+    plt.xlabel('Time')
+    plt.ylabel('Mean queue length')
+    plt.title('Mean queue length for first dishes')
+    plt.show()
 
-if __name__ == "__main__":
+def get_verified_data(data_array):
+    means = []
+    for data in data_array:
+        value, time = zip(*data)
+        values_to_use = []
+        for i in range(time.__len__()):
+            if time[i] > 1800:
+                values_to_use.append(value[i])
+        means.append(np.mean(values_to_use))
+    return means
+                
+        
+
+def create_elements():
     randomizer = Randomizer()
     group_randomizer = {
         "randomizer": randomizer,
@@ -179,8 +204,25 @@ if __name__ == "__main__":
         drinks, 
         check_out
     ]
+    return elements
 
-    model = Model(elements)
-    model.simulate(5400)
-    model.print_results()
-        
+if __name__ == "__main__":
+    all_first_dishes_stats = []
+    all_first_dishes_mean_queue_length = []
+
+    for i in range(5):
+        elements = create_elements()
+        model = Model(elements)
+        model.simulate(5400)
+        model.print_results()
+        for element in model.elements:
+            if isinstance(element, SMO.First_Dishes):
+                all_first_dishes_stats.append(element.mean_queue_stats_data)
+                # all_first_dishes_mean_queue_length.append(element.mean_queue_sum / model.tcurr)
+    
+    
+    print("MEAN QUEUE LENGTH")
+    print(get_verified_data(all_first_dishes_stats))
+    # print (all_first_dishes_mean_queue_length)
+    # draw_statistics_data(all_first_dishes_stats)
+            

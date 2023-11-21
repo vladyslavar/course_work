@@ -113,6 +113,8 @@ class First_Dishes(Element):
         self.mean_waiting_time = 0.0
         self.max_waiting_time = 0.0
 
+        self.mean_queue_stats_data = []
+
     def in_act(self, student):
         print(f'{student.name} came to {self.name}')
         self.received_students += 1
@@ -153,6 +155,7 @@ class First_Dishes(Element):
         self.mean_queue_sum += self.queue.__len__() * deltaT
         if self.queue.__len__() > self.max_queue:
             self.max_queue = self.queue.__len__()
+        self.mean_queue_stats_data.append([self.mean_queue_sum / self.tcurr if self.tcurr != 0 else 0, self.tcurr])
 
     def print_statistics(self):
         super().print_statistics()

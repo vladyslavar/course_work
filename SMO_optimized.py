@@ -114,6 +114,8 @@ class First_Dishes_Worker():
         self.mean_waiting_time = 0.0
         self.max_waiting_time = 0.0
 
+        self.mean_queue_stats_data = []
+
 class First_Dishes(Element):
     def __init__(self, name, distribution):
         super().__init__(name, distribution)
@@ -185,6 +187,7 @@ class First_Dishes(Element):
             worker.mean_queue_sum += worker.queue.__len__() * deltaT
             if worker.queue.__len__() > worker.max_queue:
                 worker.max_queue = worker.queue.__len__()
+            worker.mean_queue_stats_data.append([worker.mean_queue_sum / self.tcurr if self.tcurr != 0 else 0, self.tcurr])
 
     def print_statistics(self):
         for worker in self.first_dishes_workers:
